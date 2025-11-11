@@ -1,7 +1,7 @@
 // src/app/api/vote/create/route.ts
-import dbConnect from '../../../../../lib/dbConnect';
-import Vote from '../../../../../models/Vote';
-import Voter from '../../../../../models/Voter';
+import dbConnect from "@/lib/dbConnect";
+import Vote from "@/models/Vote";
+import Voter from "@/models/Voter";
 
 export async function POST(req: Request) {
   try {

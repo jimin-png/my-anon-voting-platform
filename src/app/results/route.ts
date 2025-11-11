@@ -1,7 +1,7 @@
 // src/app/api/vote/results/route.ts
 
-import dbConnect from '../../../../../lib/dbConnect'; // ✅ 활성화
-import Vote from '../../../../../models/Vote'; // ✅ Vote 모델 Import (실제 스키마)
+import dbConnect from "@/lib/dbConnect";
+import Vote from "@/models/Vote";
 
 export async function GET(req: Request) {
   if (req.method !== 'GET') {
