@@ -1,4 +1,4 @@
-# 1️⃣ Build stage
+# 1. Build stage
 FROM node:18-alpine AS builder
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# 2️⃣ Production stage
+# 2. Production stage
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
@@ -20,15 +20,12 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
 
-# 🔥 런타임에 필요한 node_modules 및 package.json 복사
+# 런타임에 필요한 패키지 복사
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-
-# ⚙️ 환경변수 파일 포함 (선택사항)
-COPY .env .env
 
 # 포트 지정
 EXPOSE 3000
 
-# ✅ Next.js 서버 실행 명령
-CMD ["npm", "start"]
+# Next.js 서버 시작
+CMD ["node", "server.js"]
