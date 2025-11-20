@@ -2,19 +2,21 @@
 
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/dbConnect';
-import { Db } from 'mongodb'; // MongoDB Driver Db 타입 사용
+import { Db } from 'mongodb';
 
 export async function GET() {
     try {
         const connection = await dbConnect();
-        // 🚨 Mongoose 연결 객체에서 Db 인스턴스 추출
+        // Mongoose 연결 객체에서 Db 인스턴스 추출
         const db: Db = connection.connection.db!;
         const collection = db.collection("votes");
 
         // 🚨 투표 결과 집계를 위한 Aggregation Pipeline
         const aggregationPipeline = [
-            // 1. 투표 상태가 최종 확정된 것만 필터링 (선택 사항: 만약 votes 컬렉션에 status 필드가 있다면)
-            // { $match: { status: 'FINALIZED' } },
+
+            // 1. 🚨 수정: voteOptionId 필드가 null이거나 존재하지 않는 문서를 필터링합니다.
+            //    (이전 집계에서 null 값 111개를 유발했던 데이터 품질 문제 해결)
+            { $match: { voteOptionId: { $ne: null } } },
 
             // 2. 투표 옵션별 카운트
             { $group: { _id: "$voteOptionId", count: { $sum: 1 } } },
@@ -36,9 +38,13 @@ export async function GET() {
 
     } catch (error: unknown) {
         console.error("Tally API Error:", error);
+
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
         return NextResponse.json({
             success: false,
-            message: "Internal Server Error during vote tally calculation."
+            message: "Internal Server Error during vote tally calculation.",
+            details: errorMessage
         }, { status: 500 });
     }
 }
