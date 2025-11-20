@@ -1,24 +1,31 @@
-// jest.config.js
+// jest.config.js (TS1295 오류 해결 및 최신 설정)
 
 module.exports = {
-  // Jest가 TypeScript 파일(.ts)을 인식하고 변환하도록 설정
+  // 1. 기본 설정
   preset: 'ts-jest',
-
-  // 테스트 환경을 Node.js로 설정 (API 테스트에 적합)
   testEnvironment: 'node',
-
-  // 테스트 파일의 위치 패턴을 지정
+  setupFiles: ['dotenv/config'],
   testMatch: ['<rootDir>/__tests__/**/*.test.ts'],
 
-  // 테스트 전에 환경 변수(.env.local)를 로드하도록 설정
-  setupFiles: ['dotenv/config'],
+  // 🚨 2. 모듈 충돌 해결: transform 섹션을 사용하여 ts-jest 설정 주입
+  // Jest에게 .ts 파일을 CommonJS 모듈로 변환하도록 명시적으로 지시합니다.
+  transform: {
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        // 🚨 tsconfig 설정을 덮어씌워 CommonJS 모듈을 사용하도록 강제
+        tsconfig: {
+          module: 'commonjs',
+          verbatimModuleSyntax: false, // 엄격한 검사 해제
+        },
+      },
+    ],
+  },
 
-  // 🚨 ts-jest 글로벌 설정을 통해 프로젝트 tsconfig 파일을 명시적으로 사용
-  // 이 부분이 test.each 오류를 최종적으로 해결합니다.
-  globals: {
-    'ts-jest': {
-      // Next.js 프로젝트의 메인 tsconfig 파일을 사용하도록 지정
-      tsconfig: 'tsconfig.json',
-    },
+  // 3. 별칭(Alias) 경로 설정 (tsconfig.json의 paths를 Jest가 이해하도록)
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^@/models/(.*)$': '<rootDir>/src/models/$1',
   },
 };
