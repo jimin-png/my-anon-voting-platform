@@ -1,0 +1,253 @@
+{
+	"info": {
+		"_postman_id": "489012c3-3700-4ff4-90a2-1c876a7e0d4b",
+		"name": "[Project] 익명 투표 플랫폼 Backend API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49279795",
+		"_collection_link": "https://jiminn0-5955067.postman.co/workspace/jimin's-Workspace~7d01da92-9fdd-49c5-8f2f-fbd11f80da99/collection/49279795-489012c3-3700-4ff4-90a2-1c876a7e0d4b?action=share&source=collection_link&creator=49279795"
+	},
+	"item": [
+		{
+			"name": "API 테스트",
+			"item": [
+				{
+					"name": "/health 엔드포인트 테스트",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "/api/register(회원가입) 엔드포인트 테스트",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://my-anon-voting-platform.onrender.com/api/register",
+							"protocol": "https",
+							"host": [
+								"my-anon-voting-platform",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/login(로그인) 엔드포인트 테스트",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://my-anon-voting-platform.onrender.com/api/login",
+							"protocol": "https",
+							"host": [
+								"my-anon-voting-platform",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/vote(투표 등록) 엔드포인트 테스트",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"candidateId\": \"1\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://my-anon-voting-platform.onrender.com/api/vote",
+							"protocol": "https",
+							"host": [
+								"my-anon-voting-platform",
+								"onrender",
+								"com"
+							],
+							"path": [
+								"api",
+								"vote"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/api/results(결과조회) 엔드포인트 테스트",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "결과",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "[POST] 1. 투표 생성 (Vote Create)",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"walletAddress\": \"0xdef888\",\r\n  \"candidate\": \"Bob\",\r\n  \"txHash\": \"0x0000000000000000000000000000000000000000000000000000000000000000\" \r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/api/vote/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"api",
+						"vote",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[POST] 2. 유권자 등록 (Register User)",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "name",
+							"value": "최종테스트",
+							"description": "0x1234567890ABCDEF1234567890ABCDEF12345678",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/user/register",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "[GET] 3. 투표 결과 조회 (Get Results)",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/api/vote/results",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"vote",
+						"results"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "이벤트 동기화 2회 확인 테스트",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "투표 API (/api/vote) 테스트",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "중복 투표 방지 테스트",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "/metrics API 구현",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
