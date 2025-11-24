@@ -31,6 +31,14 @@ if (!(global as any).mongoose) {
 
 // 3. DB 연결 함수
 export default async function dbConnect(): Promise<Mongoose> {
+
+  // ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇ 추가된 부분 (테스트 환경에서 캐싱 제거)
+  if (process.env.NODE_ENV === "test") {
+    cached.conn = null;
+    cached.promise = null;
+  }
+  // ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆ 여기만 새로 추가됨
+
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
