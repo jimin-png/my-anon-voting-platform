@@ -1,11 +1,15 @@
 // vote.test.ts (캡스톤 6주차 최종 E2E 테스트)
 
 import { describe, test, beforeAll, expect } from '@jest/globals'; // Jest 표준 임포트
-// import assert from 'node:assert'; // 🚨 assert 임포트 제거
 import request from 'supertest';
 import dbConnect from '@/lib/dbConnect';
 import { Db } from 'mongodb';
-import { Mongoose } from 'mongoose'; // Mongoose 타입 추가 (선택 사항)
+import { Mongoose } from 'mongoose';
+
+// 🚨🚨🚨 최종 수정: CommonJS(require)를 사용하여 데이터 파일 임포트 🚨🚨🚨
+// (test-data-100.js 파일이 module.exports를 사용한다고 가정)
+const { transactionData } = require('./test-data-100');
+// -----------------------------------------------------------
 
 // -----------------------------------------------------------
 // 🚨 환경 변수 및 상수 정의
@@ -14,8 +18,9 @@ import { Mongoose } from 'mongoose'; // Mongoose 타입 추가 (선택 사항)
 const API_BASE = 'https://my-anon-voting-platform.onrender.com';
 const HEALTH_ENDPOINT = '/api/healthz';
 const VOTE_ENDPOINT = '/api/vote';
-const TALLY_ENDPOINT = '/api/tally'; // 최종 집계 엔드포인트
+const TALLY_ENDPOINT = '/api/tally';
 const TOTAL_RUNS = 20;
+
 // 🚨 고유 IP 주소 정의 (테스트 IP 캐싱 문제 해결용)
 const UNIQUE_TEST_IP = '192.168.1.100';
 
@@ -26,15 +31,15 @@ const UNIQUE_TEST_IP = '192.168.1.100';
 async function cleanDatabase() {
     console.log('\n--- Starting Database Cleanup ---');
     try {
-        const connection = await dbConnect() as Mongoose; // Mongoose 타입 명시
-        // Mongoose 연결 객체에서 Db 인스턴스 추출
+        // DB 연결
+        const connection = await dbConnect() as Mongoose;
         const db: Db = connection.connection.db!;
 
         // votes 컬렉션의 모든 문서를 삭제합니다.
         await db.collection("votes").deleteMany({});
         console.log('--- Database cleanup successful. All votes deleted. ---');
     } catch (e) {
-        console.error('--- WARNING: Database cleanup failed! (May affect test results) ---', e);
+        console.error('--- WARNING: Database cleanup failed! (Likely connection issue) ---', e);
     }
 }
 
@@ -42,6 +47,7 @@ async function cleanDatabase() {
 
 describe('E2E Stability and Functionality Test', () => {
 
+    // 테스트 시작 전에 DB를 정리합니다.
     beforeAll(async () => {
         await cleanDatabase();
     });
@@ -55,23 +61,24 @@ describe('E2E Stability and Functionality Test', () => {
 
     // 2. 트랜잭션 체인 안정성 테스트 (20회 연속 실행)
     test('Transaction Chain Stability: Should allow first vote and block subsequent votes', async () => {
-        const votePayload = { vote_option_id: 1 };
+        // 🚨 데이터 배열에서 첫 번째 항목을 투표 페이로드로 사용
+        const votePayload = transactionData[0];
 
         for (let i = 1; i <= TOTAL_RUNS; i++) {
             console.log(`--- Transaction Attempt #${i} ---`);
 
-            // 🚨 최종 수정: X-Forwarded-For 헤더를 주입하여 고유 IP로 인식시킵니다.
+            // X-Forwarded-For 헤더를 주입하여 고유 IP로 인식시킵니다.
             const voteResponse = await request(API_BASE)
                 .post(VOTE_ENDPOINT)
-                .set('X-Forwarded-For', UNIQUE_TEST_IP) // 👈 고유 IP 주입
+                .set('X-Forwarded-For', UNIQUE_TEST_IP)
                 .send(votePayload);
 
             if (i === 1) {
-                // 🚨 1회차: 투표 성공 (200 OK)을 기대합니다.
+                // 1회차: 투표 성공 (200 OK)을 기대합니다.
                 expect(voteResponse.statusCode).toBe(200);
                 expect(voteResponse.body.success).toBe(true);
             } else {
-                // 🚨 2회차 이후: 중복 투표 방지 (403 Forbidden)을 기대합니다.
+                // 2회차 이후: 중복 투표 방지 (403 Forbidden)을 기대합니다.
                 expect(voteResponse.statusCode).toBe(403);
                 expect(voteResponse.body.success).toBe(false);
             }
@@ -89,6 +96,7 @@ describe('E2E Stability and Functionality Test', () => {
         expect(tallyResponse.statusCode).toBe(200);
         expect(tallyResponse.body.success).toBe(true);
 
+        // 투표 수 확인 로직 (1표 이상 등록되었는지 확인)
         const totalVotes = tallyResponse.body.tally.reduce((sum: number, item: any) => sum + item.count, 0);
         expect(totalVotes).toBeGreaterThanOrEqual(1);
     });
