@@ -51,7 +51,7 @@
     ".next/types/**/*.ts",
     "src/**/*", // 👈 src 폴더 내부의 모든 파일 포함
     "__tests__/**/*.ts"
-  ],
+, "__tests__/stressTest.js"  ],
   "exclude": [
     "node_modules",
     "dist",
