@@ -1,54 +1,69 @@
-// __tests__/stressTest.js (서버 없이 시뮬레이션용)
+// __tests__/stressTest.js
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import { ethers } from 'ethers';
 
-import { transactionData } from '../src/data/test-data-101.js'; // 실제 데이터 불러오기
+dotenv.config();
 
-// -----------------------------------------------------------
-// 🚨 트랜잭션 전송 시뮬레이션
-// -----------------------------------------------------------
-async function trySendTxSimulated(data) {
-    // 0~1 사이 랜덤 숫자를 만들어서 성공/실패 시뮬
-    const isSuccess = Math.random() > 0.3; // 70% 확률로 성공
-    await new Promise((res) => setTimeout(res, 50)); // 네트워크 지연 흉내
-    if (isSuccess) {
-        return [true, `SIMULATED_TX_HASH_${Math.floor(Math.random() * 100000)}`];
-    } else {
-        return [false, 'Simulated TX failure'];
-    }
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 환경 변수
+const RPC_URL = process.env.RPC_URL;
+const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY;
+const VOTING_ADDRESS = process.env.CONTRACT_ADDRESS_VOTING;
+
+// Hardhat artifact 읽기
+const abiPath = path.join(__dirname, '../artifacts/VotingABI.json');
+if (!fs.existsSync(abiPath)) {
+  console.error(`ABI 파일이 존재하지 않습니다: ${abiPath}`);
+  process.exit(1);
+}
+const artifact = JSON.parse(fs.readFileSync(abiPath, 'utf8'));
+const votingABI = artifact.abi; // ✅ 여기서 abi만 추출
+
+// Provider & Wallet
+const provider = new ethers.JsonRpcProvider(RPC_URL);
+const wallet = new ethers.Wallet(RELAYER_PRIVATE_KEY, provider);
+
+// Contract 연결 (ethers v6)
+const votingContract = new ethers.Contract(VOTING_ADDRESS, votingABI, wallet);
+
+// Contract 함수 확인
+console.log('Contract methods:', Object.keys(votingContract).filter(k => typeof votingContract[k] === 'function'));
+
+if (typeof votingContract.vote !== 'function') {
+  console.error('vote 함수가 Contract에 없습니다. ABI 확인 필요');
+  process.exit(1);
 }
 
-// -----------------------------------------------------------
-// 🚨 메인 테스트 루프 (시뮬레이션)
-// -----------------------------------------------------------
-async function runStressTestSimulated(dataArray) {
-    let successCount = 0;
-    let failureCount = 0;
+// Stress Test 함수
+async function runStressTest(txCount = 10, live = false) {
+  console.log(`Stress test 시작 - live 모드: ${live}`);
 
-    for (let i = 0; i < dataArray.length; i++) {
-        const data = dataArray[i];
+  for (let i = 0; i < txCount; i++) {
+    try {
+      const proposalId = 0;     // 테스트용 Proposal ID
+      const proof = '0x';       // 테스트용 proof (실제 검증 시 교체)
+      const pubSignals = [0];   // 테스트용 public signals
 
-        try {
-            const [success, info] = await trySendTxSimulated(data);
-            if (success) {
-                successCount++;
-                console.log(`[${i}] SUCCESS: ${info}`);
-            } else {
-                failureCount++;
-                console.log(`[${i}] FAIL: ${info}`);
-            }
-        } catch (error) {
-            failureCount++;
-            console.error(`[${i}] FATAL ERROR:`, error);
-        }
+      if (live) {
+        const tx = await votingContract.vote(proposalId, proof, pubSignals);
+        await tx.wait();
+        console.log(`Tx ${i + 1} 전송 완료: ${tx.hash}`);
+      } else {
+        await votingContract.estimateGas.vote(proposalId, proof, pubSignals);
+        console.log(`Tx ${i + 1} 시뮬레이션 완료`);
+      }
+    } catch (err) {
+      console.log(`Tx ${i + 1} ${(live ? '' : '(시뮬레이션)')}실패:`, err.message);
     }
+  }
 
-    const total = dataArray.length;
-    const successRate = (successCount / total) * 100;
-    console.log(`\n--- 최종 결과 ---`);
-    console.log(`총 시도: ${total}건`);
-    console.log(`성공: ${successCount}건`);
-    console.log(`실패: ${failureCount}건`);
-    console.log(`성공률: ${successRate.toFixed(2)}%`);
+  console.log('Stress test 종료');
 }
 
-// 실제 테스트 실행
-runStressTestSimulated(transactionData);
+// 실행
+runStressTest(10, false);
